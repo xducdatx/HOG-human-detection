@@ -1,8 +1,8 @@
 import numpy as np
 import cv2  
 from sklearn.svm import SVC
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split, GridSearchCV
 import glob
 import joblib
 from my_lib import model
@@ -10,11 +10,27 @@ from my_lib import model
 def conv_sobel (matrix, kernel):
     height, width = matrix.shape
     k_height, k_width = kernel.shape
-    new_matrix = np.zeros((8, 8), dtype=np.float32)
+    new_matrix = np.zeros((8, 8), dtype=np.float64)
     for i in range(height - k_height + 1):
         for j in range(width - k_width + 1):
             block = matrix[i:i+k_height, j:j+k_width]
             new_matrix[i, j] = np.sum(block * kernel)
+    return new_matrix
+
+def sobel_extraction_Gx (matrix):
+    new_matrix = np.zeros((8, 8), dtype=np.float64)
+    for i in range(8):
+        for j in range(8):
+            new_matrix[i, j] = matrix[i + 2, j + 1] - matrix[i, j + 1]
+
+    return new_matrix
+
+def sobel_extraction_Gy (matrix):
+    new_matrix = np.zeros((8, 8), dtype=np.float64)
+    for i in range(8):
+        for j in range(8):
+            new_matrix[i, j] = matrix[i + 1, j + 2] - matrix[i + 1, j]
+
     return new_matrix
 
 def compute_gx_gy(gx, gy):
@@ -30,11 +46,12 @@ def compute_histogram(magnitude, orientation, nbins = 9):
     # print(histogram)
     for i in range(8):
         for j in range(8):
-            orientation_value = orientation[i, j] % 180
-            bin_index1 = int(orientation_value / bins_width)
-            bin_index2 = (bin_index1 + 1)
-            histogram[bin_index1] += magnitude[i, j] * (bin_index2 * bins_width - orientation_value) / bins_width
-            histogram[bin_index2 % nbins] += magnitude[i, j] * (orientation_value - bin_index1 * bins_width) / bins_width
+            # orientation_value = orientation[i, j] % 180
+            # bin_index1 = int(orientation_value / bins_width)
+            # bin_index2 = (bin_index1 + 1)
+            # histogram[bin_index1] += magnitude[i, j] * (bin_index2 * bins_width - orientation_value) / bins_width
+            # histogram[bin_index2 % nbins] += magnitude[i, j] * (orientation_value - bin_index1 * bins_width) / bins_width
+            histogram[int(orientation[i, j] / bins_width) % nbins] += magnitude[i, j]
     return histogram
 
 def l2_normalize(vector, epsilon=1e-6):
@@ -52,10 +69,15 @@ def img_to_gray(image):
             gray_image[i, j] = int(gray_value)
     return gray_image
 
+count_greater_than_511 = 0
+max_val = 0
+min_val = 0
 def hog(image):
     sobel_x = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]], dtype=np.float32)
     sobel_y = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], dtype=np.float32)
-
+    global count_greater_than_511
+    global max_val
+    global min_val
     #Padding zero
     # padded_image = np.pad(gray_image, ((1, 1), (1, 1)), mode='constant', constant_values=0)
     height, width = image.shape
@@ -74,31 +96,53 @@ def hog(image):
             block_8x8_4 = block_16x16[8:16, 8:16] 
 
             padded_image = np.pad(block_8x8_1, ((1, 1), (1, 1)), mode='constant', constant_values=0)
-            gx = conv_sobel(padded_image, sobel_x)
-            gy = conv_sobel(padded_image, sobel_y)
+            # gx = conv_sobel(padded_image, sobel_x)
+            # gy = conv_sobel(padded_image, sobel_y)
+            gx = sobel_extraction_Gx(padded_image)
+            gy = sobel_extraction_Gy(padded_image)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_1 = compute_histogram(magnitude, orientation)
- 
+            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
+
             padded_image = np.pad(block_8x8_2, ((1, 1), (1, 1)), mode='constant', constant_values=0)
-            gx = conv_sobel(padded_image, sobel_x)
-            gy = conv_sobel(padded_image, sobel_y)
+            # gx = conv_sobel(padded_image, sobel_x)
+            # gy = conv_sobel(padded_image, sobel_y)
+            gx = sobel_extraction_Gx(padded_image)
+            gy = sobel_extraction_Gy(padded_image)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_2 = compute_histogram(magnitude, orientation)
+            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
 
             padded_image = np.pad(block_8x8_3, ((1, 1), (1, 1)), mode='constant', constant_values=0)
-            gx = conv_sobel(padded_image, sobel_x)
-            gy = conv_sobel(padded_image, sobel_y)
+            # gx = conv_sobel(padded_image, sobel_x)
+            # gy = conv_sobel(padded_image, sobel_y)
+            gx = sobel_extraction_Gx(padded_image)
+            gy = sobel_extraction_Gy(padded_image)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_3 = compute_histogram(magnitude, orientation)
+            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
 
             padded_image = np.pad(block_8x8_4, ((1, 1), (1, 1)), mode='constant', constant_values=0)
-            gx = conv_sobel(padded_image, sobel_x)
-            gy = conv_sobel(padded_image, sobel_y)
+            # gx = conv_sobel(padded_image, sobel_x)
+            # gy = conv_sobel(padded_image, sobel_y)
+            gx = sobel_extraction_Gx(padded_image)
+            gy = sobel_extraction_Gy(padded_image)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_4 = compute_histogram(magnitude, orientation)
+            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
 
             combined_histogram = np.concatenate((histogram_1, histogram_2, histogram_3, histogram_4))
-
+            count_greater_than_511 += np.sum(combined_histogram > 511)
+            max_val = max(max_val, np.max(combined_histogram))
+            min_val = min(min_val, np.min(combined_histogram))
             normalize_histogram = l2_normalize(combined_histogram)
             all_histograms.extend(normalize_histogram)
 
@@ -131,9 +175,14 @@ def sliding_windows(image, window_size, step_size):
     print("height", height)
     print("width", width)
 
-    for i in range(0, height - step_size[0], step_size[0]):
-        for j in range(0, width - step_size[1], step_size[1]):
-            if (i + window_size[0] > height):
+    for i in range(0, height - window_size[0], step_size[0]):
+        for j in range(0, width - window_size[1], step_size[1]):
+            if (i + window_size[0] > height) and (j + window_size[1] > width):
+                window = image[height - window_size[0] : height, width - window_size[1] : width]
+                print("Out of height & width")
+                print("i: ", height - window_size[0], "-> ", height)
+                print("j: ", width - window_size[1],  "-> ", width)
+            elif (i + window_size[0] > height):
                 window = image[height - window_size[0] : height, j : j + window_size[1]]
                 print("Out of height")
                 print("i: ", height - window_size[0], "-> ", height)
@@ -157,78 +206,114 @@ def main():
     # hog_features = hog(gray_image)
     # print("Size of Hog:", hog_features.shape)
     # print(hog_features)
-    window_size = (128, 64)
-    step_size = (32, 64)
+    window_size = (128, 64) # (height, width)
+    step_size = (16, 16)
 
+###########################################
+
+# still running
+# Window shape:  (128, 64)
+# still running
+# Window shape:  (128, 64)
+# still running
+# Window shape:  (128, 48)
+
+
+
+# Để 16,16 step size có một window cuối bị 128, 48
+
+# need to fix it
+###########################################
+
+    global count_greater_than_511 
+    global max_val
+    global min_val
     resize_image = resize_inter_area(gray_image, 240, 320)   # (height, width)
 
     windows = sliding_windows(resize_image, window_size, step_size)
     print("Number of windows: ", len(windows))
-    #-----------------------------------------------------
-    #train test
-    # image_paths_pos = glob.glob('pos_images_train/*')
-    # image_paths_neg = glob.glob('neg_images_train/*')
-
-    # hog_features_list = []
-    # labels = [1] * 1228 + [0] * 1218
     count_frame_people = 0
     for window in windows:
+
+        print("Window shape: ", window.shape)
+
         hog_features = hog(window)
         hog_features_reshape = hog_features.reshape(1, -1)
         if model.predict(hog_features_reshape) == 1:
             count_frame_people += 1
 
     print("Count frame people: ", count_frame_people)
-    # for image_path in image_paths_pos:
-    #     image = cv2.imread(image_path)
-    #     gray_image = img_to_gray(image)
-    #     hog_features = hog(gray_image)
-    #     hog_features_list.append(hog_features)
 
-    # for image_path in image_paths_neg:
-    #     image = cv2.imread(image_path)
-    #     gray_image = img_to_gray(image)
-    #     hog_features = hog(gray_image)
-    #     hog_features_list.append(hog_features)
+    print("Count greater than 511: ", count_greater_than_511)
+    print("Max value: ", max_val)
+    print("Min value: ", min_val)
+    #HÊLLO
+    #-----------------------------------------------------
+    # train test
+#     image_paths_pos = glob.glob('pos_images_train_2/*')
+#     image_paths_neg = glob.glob('neg_images_train_2/*')
 
-    # X = np.array(hog_features_list)
-    # y = np.array(labels)
-    # print(X.shape)
-    # print(X)
-    # print(y.shape)
-    # print(y)
-    # # #-----------------------------------------------------
-    # X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=50)
+#     hog_features_list = []
+#     labels = [1] * 3542 + [0] * 4872
+#     for image_path in image_paths_pos:
+#         image = cv2.imread(image_path)
+#         gray_image = img_to_gray(image)
+#         hog_features = hog(gray_image)
+#         hog_features_list.append(hog_features)
+
+#     for image_path in image_paths_neg:
+#         image = cv2.imread(image_path)
+#         gray_image = img_to_gray(image)
+#         hog_features = hog(gray_image)
+#         hog_features_list.append(hog_features)
+
+#     X = np.array(hog_features_list)
+#     y = np.array(labels)
+#     print(X.shape)
+#     print(X)
+#     print(y.shape)
+#     print(y)
+#     # #-----------------------------------------------------
+#     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+#     # param_grid = {
+#     #     'C': [0.1, 1, 10, 100],
+#     #     'kernel': ['linear'],
+#     #     'gamma': [1, 0.1, 0.01, 0.001]
+#     # }
+#     # grid = GridSearchCV(SVC(), param_grid, refit=True, verbose=2, cv=5)
+#     # grid.fit(X_train, y_train)  
+#     # print("Best parameters found: ", grid.best_params_)
+#     # Huấn luyện mô hình SVM
+
+# #######
+
+#     model = SVC(kernel='linear')
+#     model.fit(X_train, y_train)
+# #######   
+#     # Dự đoán trên tập kiểm tra
+#     y_pred = model.predict(X_test)
     
-    # # Huấn luyện mô hình SVM
-    # model = SVC(kernel='linear')
-    # model.fit(X_train, y_train)
+#     # Đánh giá độ chính xác
+#     accuracy = accuracy_score(y_test, y_pred)
+#     print("Accuracy:", accuracy)
+#     print("Predicted labels:", y_pred)
+#     print("True labels:", y_test)
     
-    # # Dự đoán trên tập kiểm tra
-    # y_pred = model.predict(X_test)
-    
-    # # Đánh giá độ chính xác
-    # accuracy = accuracy_score(y_test, y_pred)
-    # print("Accuracy:", accuracy)
-    # print("Predicted labels:", y_pred)
-    # print("True labels:", y_test)
-    
-    # # In ra các tham số của mô hình
-    # print("Model parameters:", model.get_params())
-    # if model.kernel == 'linear':
-    #     print("Model coefficients shape:", model.coef_.shape)
-    #     print("Model coefficients:", model.coef_)
-    # joblib.dump(model, 'svm_model_train_9-8.pkl')
-    # print("Model saved to svm_model_train_9-8.pkl")
+#     # In ra các tham số của mô hình
+#     print("Model parameters:", model.get_params())
+#     if model.kernel == 'linear':
+#         print("Model coefficients shape:", model.coef_.shape)
+#         print("Model coefficients:", model.coef_)
+#     joblib.dump(model, 'svm_model_11-9.pkl')
+#     print("Model saved to svm_model_11-9.pkl")
+
+
 
     # hog_features_reshape = hog_features.reshape(1, -1)
     # print(hog_features_reshape.shape)
     # print("Model coefficients shape:", model.coef_.shape)
     # print("Model coefficients:", model.coef_)
-    
-
     # print(model.predict(hog_features_reshape))
-
     # print("bias: ", model.intercept_)
     # result = np.sum( hog_features_reshape *  model.coef_) + model.intercept_
     # print("Result: ")
@@ -236,25 +321,22 @@ def main():
 if __name__ == "__main__":
     main()
 
+# BUG!!!
+###########################################
 
-#-----------------------------------------------------
-# result = np.sum(all_histograms * weight_params) + bias
-
-# hog = cv2.HOGDescriptor()
-# library_histogram = hog.compute(gray_image)
-# result2 = np.sum(library_histogram * weight_params) + bias
-# print("My histogram")
-# print(all_histograms)
-# print("Library histogram")
-# print(library_histogram)
-# print("My model")
-# print (result)
-
-# print("Library model")
-# print(result2)
+# still running
+# Window shape:  (128, 64)
+# still running
+# Window shape:  (128, 64)
+# still running
+# Window shape:  (128, 48)
 
 
-#-----------------------------------------------------
+
+# Để 16,16 step size có một window cuối bị 128, 48
+
+# need to fix it
+###########################################
 
 
 
