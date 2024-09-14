@@ -203,15 +203,16 @@ def sliding_windows(image, window_size, step_size):
     return windows
 
 def main():
-    image = cv2.imread('640x480/peopl2.png')
+    image = cv2.imread('640x480/carr.jpg')
     gray_image = img_to_gray(image)
 
     window_size = (128, 64) # (height, width)
-    step_size = (16, 16)
+    step_size = (32, 16)
 
     global count_greater_than_511 
     global max_val
     global min_val
+    count_frame_people_2 = 0
     resize_image = resize_inter_area(gray_image, 240, 320)   # (height, width)
 
     windows = sliding_windows(resize_image, window_size, step_size)
@@ -225,9 +226,11 @@ def main():
         hog_features_reshape = hog_features.reshape(1, -1)
         if model.predict(hog_features_reshape) == 1:
             count_frame_people += 1
+        if (np.sum( hog_features_reshape *  model.coef_) + model.intercept_ > 0):
+            count_frame_people_2 += 1
 
     print("Count frame people: ", count_frame_people)
-
+    print("Count frame people 2 : ", count_frame_people_2)
     print("Count greater than 511: ", count_greater_than_511)
     print("Max value: ", max_val)
     print("Min value: ", min_val)

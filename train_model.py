@@ -205,11 +205,14 @@ def sliding_windows(image, window_size, step_size):
 def main():
     #-----------------------------------------------------
     # train test
+    global count_greater_than_511 
+    global max_val
+    global min_val
     image_paths_pos = glob.glob('pos_images_train_2/*')
     image_paths_neg = glob.glob('neg_images_train_2/*')
 
     hog_features_list = []
-    labels = [1] * 3542 + [0] * 4872
+    labels = [1] * 3542 + [0] * 9744
     for image_path in image_paths_pos:
         image = cv2.imread(image_path)
         gray_image = img_to_gray(image)
@@ -230,23 +233,26 @@ def main():
     print(y)
     # #-----------------------------------------------------
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    # param_grid = {
-    #     'C': [0.1, 1, 10, 100],
-    #     'kernel': ['linear'],
-    #     'gamma': [1, 0.1, 0.01, 0.001]
-    # }
-    # grid = GridSearchCV(SVC(), param_grid, refit=True, verbose=2, cv=5)
-    # grid.fit(X_train, y_train)  
-    # print("Best parameters found: ", grid.best_params_)
+    param_grid = {
+        'C': [0.01, 0.1, 1, 10, 100, 1000],
+        'kernel': ['linear'],
+    }
+    grid = GridSearchCV(SVC(), param_grid, refit=True, verbose=2, cv=5)
+    grid.fit(X_train, y_train)  
+    print("Best parameters found: ", grid.best_params_)
+    best_model = grid.best_estimator_
+
+
     # Huấn luyện mô hình SVM
 
 #######
 
-    model = SVC(kernel='linear')
-    model.fit(X_train, y_train)
+
+    # model = SVC(kernel='linear')
+    # model.fit(X_train, y_train)
 #######   
     # Dự đoán trên tập kiểm tra
-    y_pred = model.predict(X_test)
+    y_pred = best_model.predict(X_test)
     
     # Đánh giá độ chính xác
     accuracy = accuracy_score(y_test, y_pred)
@@ -255,13 +261,16 @@ def main():
     print("True labels:", y_test)
     
     # In ra các tham số của mô hình
-    print("Model parameters:", model.get_params())
-    if model.kernel == 'linear':
-        print("Model coefficients shape:", model.coef_.shape)
-        print("Model coefficients:", model.coef_)
-    joblib.dump(model, 'svm_model_11-9.pkl')
-    print("Model saved to svm_model_11-9.pkl")
+    print("Model parameters:", best_model.get_params())
+    if best_model.kernel == 'linear':
+        print("Model coefficients shape:", best_model.coef_.shape)
+        print("Model coefficients:", best_model.coef_)
+    joblib.dump(best_model, 'svm_model_14-9_gridS.pkl')
+    print("Model saved to svm_model_14-9_gridS.pkl")
 
+    print("count_greater_than_511", count_greater_than_511)
+    print("max_val", max_val)
+    print("min_val", min_val)
 if __name__ == "__main__":
     main()
 

@@ -1,7 +1,7 @@
 import joblib
 
 # Tải mô hình từ tệp .pkl
-model = joblib.load('svm_model_11-9.pkl')
+model = joblib.load('svm_model_14-9_gridS.pkl')
 
 # In ra mô hình đã tải
 print("Loaded model:", model)
