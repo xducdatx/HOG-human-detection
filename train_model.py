@@ -56,8 +56,15 @@ def compute_histogram(magnitude, orientation, nbins = 9):
             histogram[int(orientation[i, j] / bins_width) % nbins] += magnitude[i, j]
     return histogram
 
+count_greater_than_511 = 0
+max_val = 0
+min_val = 100
+
 def l2_normalize(vector, epsilon=1e-6):
+    global max_val
+    global min_val
     l2_norm = np.sqrt(np.sum(vector ** 2) + epsilon)
+    max_val = max(max_val, np.sum(vector ** 2))
     normalized_vector = vector / l2_norm
     return normalized_vector
 
@@ -71,9 +78,6 @@ def img_to_gray(image):
             gray_image[i, j] = int(gray_value)
     return gray_image
 
-count_greater_than_511 = 0
-max_val = 0
-min_val = 0
 def hog(image):
     sobel_x = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]], dtype=np.float32)
     sobel_y = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], dtype=np.float32)
@@ -104,9 +108,19 @@ def hog(image):
             gy = sobel_extraction_Gy(padded_image)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_1 = compute_histogram(magnitude, orientation)
-            # count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
-            # max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
-            # min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
+            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            # min_val = min(min_val, np.min(gx[gx > 0]), np.min(gy[gy > 0]), np.min(magnitude[magnitude > 0]), np.min(orientation[orientation > 0]))
+
+
+            if np.any(gx > 0):
+                min_val = min(min_val, np.min(gx[gx > 0]))
+            if np.any(gy > 0):
+                min_val = min(min_val, np.min(gy[gy > 0]))
+            if np.any(magnitude > 0):
+                min_val = min(min_val, np.min(magnitude[magnitude > 0]))
+            if np.any(orientation > 0):
+                min_val = min(min_val, np.min(orientation[orientation > 0]))
 
             padded_image = np.pad(block_8x8_2, ((1, 1), (1, 1)), mode='constant', constant_values=0)
             # gx = conv_sobel(padded_image, sobel_x)
@@ -115,9 +129,17 @@ def hog(image):
             gy = sobel_extraction_Gy(padded_image)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_2 = compute_histogram(magnitude, orientation)
-            # count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
-            # max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
-            # min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
+            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            # min_val = min(min_val, np.min(gx[gx > 0]), np.min(gy[gy > 0]), np.min(magnitude[magnitude > 0]), np.min(orientation[orientation > 0]))
+            if np.any(gx > 0):
+                min_val = min(min_val, np.min(gx[gx > 0]))
+            if np.any(gy > 0):
+                min_val = min(min_val, np.min(gy[gy > 0]))
+            if np.any(magnitude > 0):
+                min_val = min(min_val, np.min(magnitude[magnitude > 0]))
+            if np.any(orientation > 0):
+                min_val = min(min_val, np.min(orientation[orientation > 0]))
 
             padded_image = np.pad(block_8x8_3, ((1, 1), (1, 1)), mode='constant', constant_values=0)
             # gx = conv_sobel(padded_image, sobel_x)
@@ -126,9 +148,17 @@ def hog(image):
             gy = sobel_extraction_Gy(padded_image)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_3 = compute_histogram(magnitude, orientation)
-            # count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
-            # max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
-            # min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
+            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            # min_val = min(min_val, np.min(gx[gx > 0]), np.min(gy[gy > 0]), np.min(magnitude[magnitude > 0]), np.min(orientation[orientation > 0]))
+            if np.any(gx > 0):
+                min_val = min(min_val, np.min(gx[gx > 0]))
+            if np.any(gy > 0):
+                min_val = min(min_val, np.min(gy[gy > 0]))
+            if np.any(magnitude > 0):
+                min_val = min(min_val, np.min(magnitude[magnitude > 0]))
+            if np.any(orientation > 0):
+                min_val = min(min_val, np.min(orientation[orientation > 0]))
 
             padded_image = np.pad(block_8x8_4, ((1, 1), (1, 1)), mode='constant', constant_values=0)
             # gx = conv_sobel(padded_image, sobel_x)
@@ -137,14 +167,24 @@ def hog(image):
             gy = sobel_extraction_Gy(padded_image)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_4 = compute_histogram(magnitude, orientation)
-            # count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
-            # max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
-            # min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
+            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            # min_val = min(min_val, np.min(gx[gx > 0]), np.min(gy[gy > 0]), np.min(magnitude[magnitude > 0]), np.min(orientation[orientation > 0]))
+            if np.any(gx > 0):
+                min_val = min(min_val, np.min(gx[gx > 0]))
+            if np.any(gy > 0):
+                min_val = min(min_val, np.min(gy[gy > 0]))
+            if np.any(magnitude > 0):
+                min_val = min(min_val, np.min(magnitude[magnitude > 0]))
+            if np.any(orientation > 0):
+                min_val = min(min_val, np.min(orientation[orientation > 0]))
 
             combined_histogram = np.concatenate((histogram_1, histogram_2, histogram_3, histogram_4))
-            # count_greater_than_511 += np.sum(combined_histogram > 511)
-            # max_val = max(max_val, np.max(combined_histogram))
-            # min_val = min(min_val, np.min(combined_histogram))
+            count_greater_than_511 += np.sum(combined_histogram > 511)
+            max_val = max(max_val, np.max(combined_histogram))
+            if np.any(combined_histogram > 0):
+                min_val = min(min_val, np.min(combined_histogram[combined_histogram > 0])) 
+            # min_val = min(min_val, np.min(combined_histogram[combined_histogram > 0])) 
             normalize_histogram = l2_normalize(combined_histogram)
             all_histograms.extend(normalize_histogram)
 
@@ -232,7 +272,7 @@ def main():
     print(y.shape)
     print(y)
     # #-----------------------------------------------------
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=50)
     param_grid = {
         'C': [0.01, 0.1, 1, 10, 100, 1000],
         'kernel': ['linear'],
@@ -265,8 +305,8 @@ def main():
     if best_model.kernel == 'linear':
         print("Model coefficients shape:", best_model.coef_.shape)
         print("Model coefficients:", best_model.coef_)
-    joblib.dump(best_model, 'svm_model_14-9_gridS.pkl')
-    print("Model saved to svm_model_14-9_gridS.pkl")
+    joblib.dump(best_model, 'svm_model_15-9_gridS_2.pkl')
+    print("Model saved to svm_model_15-9_gridS_2pkl")
 
     print("count_greater_than_511", count_greater_than_511)
     print("max_val", max_val)
