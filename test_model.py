@@ -173,12 +173,13 @@ def resize_inter_area(img_array, new_height, new_width):
 
 def sliding_windows(image, window_size, step_size):
     windows = []
+    windows_index = []
     height, width = image.shape
     print("height", height)
     print("width", width)
 
-    for i in range(0, height - window_size[0], step_size[0]):
-        for j in range(0, width - window_size[1], step_size[1]):
+    for i in range(0, height - window_size[0] + 1, step_size[0]):
+        for j in range(0, width - window_size[1] + 1, step_size[1]):
             if (i + window_size[0] > height) and (j + window_size[1] > width):
                 window = image[height - window_size[0] : height, width - window_size[1] : width]
                 print("Out of height & width")
@@ -200,14 +201,20 @@ def sliding_windows(image, window_size, step_size):
                 print("j: ", j,  "-> ", j + window_size[1])
             print("\n")
             windows.append(window)
-    return windows
+            windows_index.append((i, j, i + window_size[0], j + window_size[1]))
+    return windows, windows_index
+
+def draw_boundaries(image, positions):
+    for (x1, y1, x2, y2) in positions:
+        cv2.rectangle(image, (y1, x1), (y2, x2), (0, 255, 0), 2)
+    return image
 
 def main():
-    image = cv2.imread('640x480/carr.jpg')
+    image = cv2.imread('640x480/110153.jpg')
     gray_image = img_to_gray(image)
 
     window_size = (128, 64) # (height, width)
-    step_size = (32, 16)
+    step_size = (16, 16)
 
     global count_greater_than_511 
     global max_val
@@ -215,22 +222,34 @@ def main():
     count_frame_people_2 = 0
     resize_image = resize_inter_area(gray_image, 240, 320)   # (height, width)
 
-    windows = sliding_windows(resize_image, window_size, step_size)
+    windows, windows_index = sliding_windows(resize_image, window_size, step_size)
     print("Number of windows: ", len(windows))
     count_frame_people = 0
-    for window in windows:
+    for idx, window in enumerate(windows):
 
         print("Window shape: ", window.shape)
-
+        
         hog_features = hog(window)
         hog_features_reshape = hog_features.reshape(1, -1)
         if model.predict(hog_features_reshape) == 1:
             count_frame_people += 1
+            print("idx: ", idx)
+            resize_image = draw_boundaries(resize_image, [windows_index[idx]])
         if (np.sum( hog_features_reshape *  model.coef_) + model.intercept_ > 0):
             count_frame_people_2 += 1
 
+    # for window in windows_index:
+    #     print(window)
+    cv2.imshow('Detected Image', resize_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
     print("Count frame people: ", count_frame_people)
     print("Count frame people 2 : ", count_frame_people_2)
+
+
+
     print("Count greater than 511: ", count_greater_than_511)
     print("Max value: ", max_val)
     print("Min value: ", min_val)
