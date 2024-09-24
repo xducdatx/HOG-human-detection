@@ -81,70 +81,73 @@ def hog(image):
     global max_val
     global min_val
     #Padding zero
-    # padded_image = np.pad(gray_image, ((1, 1), (1, 1)), mode='constant', constant_values=0)
+    image = np.pad(image, ((1, 1), (1, 1)), mode='constant', constant_values=0)
     height, width = image.shape
     gx = np.zeros((height, width), dtype=np.float32)
     gy = np.zeros((height, width), dtype=np.float32)
     block_size = 8
     all_histograms = []
     print("still running")
-    for i in range(0, height - block_size, block_size):
-        for j in range(0, width - block_size, block_size):
+    print(height,width)
+    for i in range(0, height - block_size - 2, block_size):
+        for j in range(0, width - block_size - 2, block_size):
             #update blocksize * 2 o block line 54
-            block_16x16 = image[i:i+block_size * 2 , j:j+block_size *2]
-            block_8x8_1 = block_16x16[0:8, 0:8]
-            block_8x8_2 = block_16x16[0:8, 8:16]
-            block_8x8_3 = block_16x16[8:16, 0:8] 
-            block_8x8_4 = block_16x16[8:16, 8:16] 
-
-            padded_image = np.pad(block_8x8_1, ((1, 1), (1, 1)), mode='constant', constant_values=0)
+            block_16x16 = image[i:i+block_size * 2 + 2 , j:j+block_size *2 + 2]
+            block_8x8_1 = block_16x16[0:10, 0:10]
+            block_8x8_2 = block_16x16[0:10, 8:18]
+            block_8x8_3 = block_16x16[8:18, 0:10] 
+            block_8x8_4 = block_16x16[8:18, 8:18] 
+            print("i: ", i)
+            print("j: ", j)
+            print(block_16x16.shape)
+            # padded_image = np.pad(block_8x8_1, ((1, 1), (1, 1)), mode='constant', constant_values=0)
             # gx = conv_sobel(padded_image, sobel_x)
             # gy = conv_sobel(padded_image, sobel_y)
-            gx = sobel_extraction_Gx(padded_image)
-            gy = sobel_extraction_Gy(padded_image)
+            gx = sobel_extraction_Gx(block_8x8_1)
+            gy = sobel_extraction_Gy(block_8x8_1)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_1 = compute_histogram(magnitude, orientation)
-            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
-            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
-            min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
+            # count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            # max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            # min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
 
-            padded_image = np.pad(block_8x8_2, ((1, 1), (1, 1)), mode='constant', constant_values=0)
+            # padded_image = np.pad(block_8x8_2, ((1, 1), (1, 1)), mode='constant', constant_values=0)
             # gx = conv_sobel(padded_image, sobel_x)
             # gy = conv_sobel(padded_image, sobel_y)
-            gx = sobel_extraction_Gx(padded_image)
-            gy = sobel_extraction_Gy(padded_image)
+            gx = sobel_extraction_Gx(block_8x8_2)
+            gy = sobel_extraction_Gy(block_8x8_2)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_2 = compute_histogram(magnitude, orientation)
-            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
-            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
-            min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
+            # count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            # max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            # min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
 
-            padded_image = np.pad(block_8x8_3, ((1, 1), (1, 1)), mode='constant', constant_values=0)
+            # padded_image = np.pad(block_8x8_3, ((1, 1), (1, 1)), mode='constant', constant_values=0)
             # gx = conv_sobel(padded_image, sobel_x)
             # gy = conv_sobel(padded_image, sobel_y)
-            gx = sobel_extraction_Gx(padded_image)
-            gy = sobel_extraction_Gy(padded_image)
+            gx = sobel_extraction_Gx(block_8x8_3)
+            gy = sobel_extraction_Gy(block_8x8_3)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_3 = compute_histogram(magnitude, orientation)
-            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
-            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
-            min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
+            # count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            # max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            # min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
 
-            padded_image = np.pad(block_8x8_4, ((1, 1), (1, 1)), mode='constant', constant_values=0)
+            # padded_image = np.pad(block_8x8_4, ((1, 1), (1, 1)), mode='constant', constant_values=0)
             # gx = conv_sobel(padded_image, sobel_x)
             # gy = conv_sobel(padded_image, sobel_y)
-            gx = sobel_extraction_Gx(padded_image)
-            gy = sobel_extraction_Gy(padded_image)
+            gx = sobel_extraction_Gx(block_8x8_4)
+            gy = sobel_extraction_Gy(block_8x8_4)
             magnitude, orientation = compute_gx_gy(gx, gy)
             histogram_4 = compute_histogram(magnitude, orientation)
-            count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
-            max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
-            min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
+            # count_greater_than_511 += np.sum(gx > 511) + np.sum(gy > 511) + np.sum(magnitude > 511) + np.sum(orientation > 511)
+            # max_val = max(max_val, np.max(gx), np.max(gy), np.max(magnitude), np.max(orientation))
+            # min_val = min(min_val, np.min(gx), np.min(gy), np.min(magnitude), np.min(orientation))
 
             combined_histogram = np.concatenate((histogram_1, histogram_2, histogram_3, histogram_4))
-            count_greater_than_511 += np.sum(combined_histogram > 511)
-            max_val = max(max_val, np.max(combined_histogram))
-            min_val = min(min_val, np.min(combined_histogram))
+            # count_greater_than_511 += np.sum(combined_histogram > 511)
+            # max_val = max(max_val, np.max(combined_histogram))
+            # min_val = min(min_val, np.min(combined_histogram))
             normalize_histogram = l2_normalize(combined_histogram)
             all_histograms.extend(normalize_histogram)
 
@@ -210,7 +213,7 @@ def draw_boundaries(image, positions):
     return image
 
 def main():
-    image = cv2.imread('640x480/110153.jpg')
+    image = cv2.imread('pos_images_train_2/crop_000001a.png')
     gray_image = img_to_gray(image)
 
     window_size = (128, 64) # (height, width)
@@ -220,8 +223,10 @@ def main():
     global max_val
     global min_val
     count_frame_people_2 = 0
-    resize_image = resize_inter_area(gray_image, 240, 320)   # (height, width)
-
+    # resize_image = resize_inter_area(gray_image, 240, 320)   # (height, width)
+    np.set_printoptions(threshold=np.inf)
+    resize_image = gray_image
+    print(resize_image)
     windows, windows_index = sliding_windows(resize_image, window_size, step_size)
     print("Number of windows: ", len(windows))
     count_frame_people = 0
