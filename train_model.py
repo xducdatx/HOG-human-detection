@@ -7,23 +7,12 @@ import glob
 import joblib
 from my_lib import model
 
-def conv_sobel (matrix, kernel):
-    height, width = matrix.shape
-    k_height, k_width = kernel.shape
-    new_matrix = np.zeros((8, 8), dtype=np.float64)
-    for i in range(height - k_height + 1):
-        for j in range(width - k_width + 1):
-            block = matrix[i:i+k_height, j:j+k_width]
-            new_matrix[i, j] = np.sum(block * kernel)
-    return new_matrix
-
 def sobel_extraction_Gx (matrix):
     new_matrix = np.zeros((8, 8), dtype=np.float64)
     matrix = matrix.astype(np.float64)
     for i in range(8):
         for j in range(8):
             new_matrix[i, j] = matrix[i + 2, j + 1] - matrix[i, j + 1]
-
     return new_matrix
 
 def sobel_extraction_Gy (matrix):
@@ -32,7 +21,6 @@ def sobel_extraction_Gy (matrix):
     for i in range(8):
         for j in range(8):
             new_matrix[i, j] = matrix[i + 1, j + 2] - matrix[i + 1, j]
-
     return new_matrix
 
 def compute_gx_gy(gx, gy):
@@ -48,11 +36,6 @@ def compute_histogram(magnitude, orientation, nbins = 9):
     # print(histogram)
     for i in range(8):
         for j in range(8):
-            # orientation_value = orientation[i, j] % 180
-            # bin_index1 = int(orientation_value / bins_width)
-            # bin_index2 = (bin_index1 + 1)
-            # histogram[bin_index1] += magnitude[i, j] * (bin_index2 * bins_width - orientation_value) / bins_width
-            # histogram[bin_index2 % nbins] += magnitude[i, j] * (orientation_value - bin_index1 * bins_width) / bins_width
             histogram[int(orientation[i, j] / bins_width) % nbins] += magnitude[i, j]
     return histogram
 
@@ -63,10 +46,10 @@ min_val = 100
 def l2_normalize(vector, epsilon=1e-6):
     global max_val
     global min_val
-    l2_norm = np.sqrt(np.sum(vector ** 2) + epsilon)
-    max_val = max(max_val, np.sum(vector ** 2))
-    normalized_vector = vector / l2_norm
-    return normalized_vector
+    vector = vector / (np.sum(vector) + epsilon)
+    vector = np.sqrt(vector)
+    max_val = max(max_val, np.sum(vector))
+    return vector
 
 def img_to_gray(image):
     height, width, _ = image.shape
@@ -79,8 +62,6 @@ def img_to_gray(image):
     return gray_image
 
 def hog(image):
-    sobel_x = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]], dtype=np.float32)
-    sobel_y = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]], dtype=np.float32)
     global count_greater_than_511
     global max_val
     global min_val
@@ -94,16 +75,13 @@ def hog(image):
     print("still running")
     for i in range(0, height - block_size - 2, block_size):
         for j in range(0, width - block_size - 2, block_size):
-            #update blocksize * 2 o block line 54
+
             block_16x16 = image[i:i+block_size * 2 + 2 , j:j+block_size *2 + 2]
             block_8x8_1 = block_16x16[0:10, 0:10]
             block_8x8_2 = block_16x16[0:10, 8:18]
             block_8x8_3 = block_16x16[8:18, 0:10] 
             block_8x8_4 = block_16x16[8:18, 8:18] 
 
-            # padded_image = np.pad(block_8x8_1, ((1, 1), (1, 1)), mode='constant', constant_values=0)
-            # gx = conv_sobel(padded_image, sobel_x)
-            # gy = conv_sobel(padded_image, sobel_y)
             gx = sobel_extraction_Gx(block_8x8_1)
             gy = sobel_extraction_Gy(block_8x8_1)
             magnitude, orientation = compute_gx_gy(gx, gy)
@@ -122,9 +100,7 @@ def hog(image):
             if np.any(orientation > 0):
                 min_val = min(min_val, np.min(orientation[orientation > 0]))
 
-            # padded_image = np.pad(block_8x8_2, ((1, 1), (1, 1)), mode='constant', constant_values=0)
-            # gx = conv_sobel(padded_image, sobel_x)
-            # gy = conv_sobel(padded_image, sobel_y)
+
             gx = sobel_extraction_Gx(block_8x8_2)
             gy = sobel_extraction_Gy(block_8x8_2)
             magnitude, orientation = compute_gx_gy(gx, gy)
@@ -141,9 +117,7 @@ def hog(image):
             if np.any(orientation > 0):
                 min_val = min(min_val, np.min(orientation[orientation > 0]))
 
-            # padded_image = np.pad(block_8x8_3, ((1, 1), (1, 1)), mode='constant', constant_values=0)
-            # gx = conv_sobel(padded_image, sobel_x)
-            # gy = conv_sobel(padded_image, sobel_y)
+
             gx = sobel_extraction_Gx(block_8x8_3)
             gy = sobel_extraction_Gy(block_8x8_3)
             magnitude, orientation = compute_gx_gy(gx, gy)
@@ -160,9 +134,7 @@ def hog(image):
             if np.any(orientation > 0):
                 min_val = min(min_val, np.min(orientation[orientation > 0]))
 
-            # padded_image = np.pad(block_8x8_4, ((1, 1), (1, 1)), mode='constant', constant_values=0)
-            # gx = conv_sobel(padded_image, sobel_x)
-            # gy = conv_sobel(padded_image, sobel_y)
+
             gx = sobel_extraction_Gx(block_8x8_4)
             gy = sobel_extraction_Gy(block_8x8_4)
             magnitude, orientation = compute_gx_gy(gx, gy)
@@ -274,7 +246,7 @@ def main():
     # #-----------------------------------------------------
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=50)
     param_grid = {
-        'C': [0.01, 0.1, 1, 10, 100, 1000],
+        'C': [0.01, 0.1],
         'kernel': ['linear'],
     }
     grid = GridSearchCV(SVC(), param_grid, refit=True, verbose=2, cv=5)
@@ -305,8 +277,8 @@ def main():
     if best_model.kernel == 'linear':
         print("Model coefficients shape:", best_model.coef_.shape)
         print("Model coefficients:", best_model.coef_)
-    joblib.dump(best_model, 'svm_model_15-9_gridS_2.pkl')
-    print("Model saved to svm_model_15-9_gridS_2pkl")
+    joblib.dump(best_model, 'svm_model_27-9.pkl')
+    print("Model saved to svm_model_27-9.pkl")
 
     print("count_greater_than_511", count_greater_than_511)
     print("max_val", max_val)

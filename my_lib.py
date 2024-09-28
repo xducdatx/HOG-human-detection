@@ -1,7 +1,7 @@
 import joblib
 import numpy as np
 # Tải mô hình từ tệp .pkl
-model = joblib.load('svm_model_15-9_gridS_2.pkl')
+model = joblib.load('svm_model_26-9_gridS_2.pkl')
 a = np.min(model.coef_[model.coef_ > 0])
 print("------------------")
 print (a)
