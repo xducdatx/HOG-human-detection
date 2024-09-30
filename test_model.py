@@ -188,11 +188,11 @@ def draw_boundaries(image, positions):
     return image
 
 def main():
-    image = cv2.imread('640x480/110153.jpg')
+    image = cv2.imread('640x480/aaaaa.jpg')
     gray_image = img_to_gray(image)
 
     window_size = (128, 64) # (height, width)
-    step_size = (16, 16)
+    step_size = (16, 8)
 
     global count_greater_than_511 
     global max_val
