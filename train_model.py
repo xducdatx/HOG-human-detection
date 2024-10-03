@@ -12,7 +12,7 @@ def sobel_extraction_Gx (matrix):
     matrix = matrix.astype(np.float64)
     for i in range(8):
         for j in range(8):
-            new_matrix[i, j] = matrix[i + 2, j + 1] - matrix[i, j + 1]
+            new_matrix[i, j] = abs(matrix[i + 2, j + 1] - matrix[i, j + 1])
     return new_matrix
 
 def sobel_extraction_Gy (matrix):
@@ -20,7 +20,7 @@ def sobel_extraction_Gy (matrix):
     matrix = matrix.astype(np.float64)
     for i in range(8):
         for j in range(8):
-            new_matrix[i, j] = matrix[i + 1, j + 2] - matrix[i + 1, j]
+            new_matrix[i, j] = abs(matrix[i + 1, j + 2] - matrix[i + 1, j])
     return new_matrix
 
 def compute_gx_gy(gx, gy):
