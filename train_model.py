@@ -7,20 +7,20 @@ import glob
 import joblib
 from my_lib import model
 
-def sobel_extraction_Gx (matrix):
-    new_matrix = np.zeros((8, 8), dtype=np.float64)
-    matrix = matrix.astype(np.float64)
-    for i in range(8):
-        for j in range(8):
-            new_matrix[i, j] = abs(matrix[i + 2, j + 1] - matrix[i, j + 1])
-    return new_matrix
-
 def sobel_extraction_Gy (matrix):
     new_matrix = np.zeros((8, 8), dtype=np.float64)
     matrix = matrix.astype(np.float64)
     for i in range(8):
         for j in range(8):
-            new_matrix[i, j] = abs(matrix[i + 1, j + 2] - matrix[i + 1, j])
+            new_matrix[i, j] = matrix[i + 2, j + 1] - matrix[i, j + 1]
+    return new_matrix
+
+def sobel_extraction_Gx (matrix):
+    new_matrix = np.zeros((8, 8), dtype=np.float64)
+    matrix = matrix.astype(np.float64)
+    for i in range(8):
+        for j in range(8):
+            new_matrix[i, j] = matrix[i + 1, j + 2] - matrix[i + 1, j]
     return new_matrix
 
 def compute_gx_gy(gx, gy):
@@ -46,9 +46,11 @@ min_val = 100
 def l2_normalize(vector, epsilon=1e-6):
     global max_val
     global min_val
-    vector = vector / (np.sum(vector) + epsilon)
-    vector = np.sqrt(vector)
     max_val = max(max_val, np.sum(vector))
+    vector = vector / (np.sum(vector) + epsilon)
+    if np.any(vector > 0):
+        min_val = min(min_val, np.min(vector[vector > 0])) 
+    vector = np.sqrt(vector)
     return vector
 
 def img_to_gray(image):
@@ -277,8 +279,8 @@ def main():
     if best_model.kernel == 'linear':
         print("Model coefficients shape:", best_model.coef_.shape)
         print("Model coefficients:", best_model.coef_)
-    joblib.dump(best_model, 'svm_model_27-9.pkl')
-    print("Model saved to svm_model_27-9.pkl")
+    joblib.dump(best_model, 'svm_model_30-10.pkl')
+    print("Model saved to svm_model_30-10.pkl")
 
     print("count_greater_than_511", count_greater_than_511)
     print("max_val", max_val)

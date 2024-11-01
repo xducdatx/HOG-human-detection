@@ -6,8 +6,9 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 import glob
 import joblib
 from my_lib import model
+import time
 
-def sobel_extraction_Gx (matrix):
+def sobel_extraction_Gy (matrix):
     new_matrix = np.zeros((8, 8), dtype=np.float64)
     matrix = matrix.astype(np.float64)
     for i in range(8):
@@ -15,7 +16,7 @@ def sobel_extraction_Gx (matrix):
             new_matrix[i, j] = matrix[i + 2, j + 1] - matrix[i, j + 1]
     return new_matrix
 
-def sobel_extraction_Gy (matrix):
+def sobel_extraction_Gx (matrix):
     new_matrix = np.zeros((8, 8), dtype=np.float64)
     matrix = matrix.astype(np.float64)
     for i in range(8):
@@ -132,7 +133,7 @@ def hog(image):
 def resize_inter_area(img_array, new_height, new_width):
     height, width = img_array.shape
     x_ratio = width / new_width
-    y_ratio = height / new_height
+    y_ratio = height /new_height
 
     resized_array = np.zeros((new_height, new_width), dtype=np.uint8)
 
@@ -188,18 +189,77 @@ def draw_boundaries(image, positions):
     return image
 
 def main():
-    image = cv2.imread('640x480/aaaaa.jpg')
-    gray_image = img_to_gray(image)
+    # cap = cv2.VideoCapture(0)
+    # if not cap.isOpened():
+    #     print("Không thể mở camera")
+    #     return
+    # while cap.isOpened():
+    #     # Đọc khung hình từ camera
+    #     ret, frame = cap.read()
+        
+    #     if not ret:
+    #         print("Không thể đọc khung hình từ camera")
+    #         break
 
+    #     # Chuyển đổi sang ảnh grayscale
+    #     gray_image = img_to_gray(frame)
+
+    #     # Resize hoặc không tùy thuộc vào yêu cầu của bạn
+    #     resize_image = resize_inter_area(gray_image, 240, 320)   # (height, width)
+    #     # resize_image = gray_image
+
+    #     # Sử dụng sliding windows để quét qua ảnh
+    #     window_size = (128, 64) # (height, width)
+    #     step_size = (128, 64)
+    #     windows, windows_index = sliding_windows(resize_image, window_size, step_size)
+
+    #     count_frame_people = 0
+    #     count_frame_people_2 = 0
+
+    #     # Duyệt qua các cửa sổ và áp dụng HOG
+    #     for idx, window in enumerate(windows):
+    #         print("Window shape: ", window.shape)
+            
+    #         # Tính các đặc trưng HOG cho cửa sổ hiện tại
+    #         hog_features = hog(window)
+    #         hog_features_reshape = hog_features.reshape(1, -1)
+
+    #         # Dự đoán bằng model SVM của bạn
+    #         if model.predict(hog_features_reshape) == 1:
+    #             count_frame_people += 1
+    #             print("idx: ", idx)
+    #             resize_image = draw_boundaries(resize_image, [windows_index[idx]])
+
+    #         # Cách tính dựa vào coef_ và intercept_
+    #         if (np.sum(hog_features_reshape * model.coef_) + model.intercept_ > 0):
+    #             count_frame_people_2 += 1
+
+    #     # Hiển thị khung hình đã phát hiện
+    #     cv2.imshow('Detected Image', resize_image)
+
+    #     # Nhấn 'q' để thoát
+    #     if cv2.waitKey(1) & 0xFF == ord('q'):
+    #         break
+
+    # # Giải phóng camera và đóng các cửa sổ hiển thị
+    # cap.release()
+    # cv2.destroyAllWindows()
+
+    image = cv2.imread('640x480/110153.jpg')
+    start_time = time.time();
+    gray_image = img_to_gray(image)
     window_size = (128, 64) # (height, width)
     step_size = (16, 8)
 
     global count_greater_than_511 
     global max_val
     global min_val
+    
+    max_cal_detect = 0
+
     count_frame_people_2 = 0
-    # resize_image = resize_inter_area(gray_image, 240, 320)   # (height, width)
-    resize_image = gray_image
+    resize_image = resize_inter_area(gray_image, 240, 320)   # (height, width)
+    # resize_image = gray_image
     windows, windows_index = sliding_windows(resize_image, window_size, step_size)
     print("Number of windows: ", len(windows))
     count_frame_people = 0
@@ -214,34 +274,28 @@ def main():
             print("idx: ", idx)
             resize_image = draw_boundaries(resize_image, [windows_index[idx]])
         if (np.sum( hog_features_reshape *  model.coef_) + model.intercept_ > 0):
+            if max_cal_detect < np.sum( hog_features_reshape *  model.coef_) + model.intercept_: 
+                max_cal_detect = np.sum( hog_features_reshape *  model.coef_) + model.intercept_
             count_frame_people_2 += 1
-
+    end_time = time.time()
+    print("Time: ", end_time - start_time)
     # for window in windows_index:
     #     print(window)
     cv2.imshow('Detected Image', resize_image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-
-    print("Count frame people: ", count_frame_people)
-    print("Count frame people 2 : ", count_frame_people_2)
+    print("max_cal_detect: ", max_cal_detect)
 
 
+    # print("Count frame people: ", count_frame_people)
+    # print("Count frame people 2 : ", count_frame_people_2)
+    # print("Count greater than 511: ", count_greater_than_511)
+    # print("Max value: ", max_val)
+    # print("Min value: ", min_val)
+    # print("bias: ", model.intercept_)
 
-    print("Count greater than 511: ", count_greater_than_511)
-    print("Max value: ", max_val)
-    print("Min value: ", min_val)
 
-
-    # hog_features_reshape = hog_features.reshape(1, -1)
-    # print(hog_features_reshape.shape)
-    # print("Model coefficients shape:", model.coef_.shape)
-    # print("Model coefficients:", model.coef_)
-    # print(model.predict(hog_features_reshape))
-    print("bias: ", model.intercept_)
-    # result = np.sum( hog_features_reshape *  model.coef_) + model.intercept_
-    # print("Result: ")
-    # print(result)
 if __name__ == "__main__":
     main()
 
