@@ -6,6 +6,8 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 import glob
 import joblib
 from my_lib import model
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 def sobel_extraction_Gy (matrix):
     new_matrix = np.zeros((8, 8), dtype=np.float64)
@@ -217,6 +219,8 @@ def sliding_windows(image, window_size, step_size):
     return windows
 
 def main():
+
+    
     #-----------------------------------------------------
     # train test
     global count_greater_than_511 
@@ -226,7 +230,11 @@ def main():
     image_paths_neg = glob.glob('neg_images_train_2/*')
 
     hog_features_list = []
-    labels = [1] * 3542 + [0] * 9744
+    labels = [1] * len(image_paths_pos) + [0] * len(image_paths_neg)
+
+    print("Number of positive images:", len(image_paths_pos))
+    print("Number of negative images:", len(image_paths_neg))
+    
     for image_path in image_paths_pos:
         image = cv2.imread(image_path)
         gray_image = img_to_gray(image)
@@ -279,18 +287,11 @@ def main():
     if best_model.kernel == 'linear':
         print("Model coefficients shape:", best_model.coef_.shape)
         print("Model coefficients:", best_model.coef_)
-    joblib.dump(best_model, 'svm_model_30-10.pkl')
-    print("Model saved to svm_model_30-10.pkl")
+    joblib.dump(best_model, 'svm_model_3_3.pkl')
+    print("Model saved to svm_model_3_3.pkl")
 
     print("count_greater_than_511", count_greater_than_511)
     print("max_val", max_val)
     print("min_val", min_val)
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-##  tinh Gx Gy -1 dua tren cai do

@@ -1,0 +1,46 @@
+def read_values_from_file(filename):
+    values = []
+    with open(filename, 'r') as file:
+        for line in file:
+
+            if "Python[" in line:
+                parts = line.split(':')
+                if len(parts) > 1:
+                    try:
+                        value = float(parts[1].strip().strip('[]'))
+                        values.append(value)
+                    except ValueError:
+                        continue
+
+            elif "# Mon_result[" in line:
+                parts = line.split(':')
+                if len(parts) > 1:
+                    try:
+                        value = float(parts[1].strip())
+                        values.append(value)
+                    except ValueError:
+                        continue
+    return values
+
+def find_max_deviation(file1, file2):
+    values1 = read_values_from_file(file1)
+    values2 = read_values_from_file(file2)
+
+    min_length = min(len(values1), len(values2))
+    values1 = values1[:min_length]
+    values2 = values2[:min_length]
+
+    max_deviation = 0
+    max_deviation_index = -1
+    for idx, (v1, v2) in enumerate(zip(values1, values2)):
+        deviation = abs(v1 - v2)
+        if deviation > max_deviation:
+            max_deviation = deviation
+            max_deviation_index = idx
+
+    print(f"Max deviation: {max_deviation} at line {max_deviation_index + 1}")
+
+file1 = 'people1.txt'
+file2 = 'people1_uvm.txt'
+
+find_max_deviation(file1, file2)
